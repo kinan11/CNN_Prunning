@@ -1,0 +1,60 @@
+# Ignorowanie plików pycache i __pycache__ (katalogi tymczasowe Pythona)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorowanie wirtualnych środowisk Pythona (jeśli używane)
+venv/
+env/
+*.venv/
+*.env/
+
+# Ignorowanie plików generowanych przez narzędzia budujące, takie jak setuptools, distutils, etc.
+build/
+dist/
+
+# Ignorowanie plików wykonywalnych i kompilowanych
+*.exe
+*.dll
+*.so
+*.out
+
+# Ignorowanie katalogu wygenerowanego przez Jupyter Notebook
+.ipynb_checkpoints/
+
+# Ignorowanie plików środowiska Anaconda
+# (jeśli korzystasz z Anaconda lub Miniconda)
+.conda/
+
+# Ignorowanie plików konfiguracyjnych dla środowisk
+.vscode/
+.idea/
+*.pycharm.*
+*.sublime-project
+*.sublime-workspace
+
+# Ignorowanie plików do zapisywania sesji (np. Pickle, shelve)
+*.pickle
+*.pkl
+*.db
+*.sqlite
+*.session
+
+# Ignorowanie plików generowanych przez edytory tekstu
+*~
+*.swp
+*.swo
+*.tmp
+
+# Ignorowanie plików logów
+*.log
+
+# Ignorowanie katalogów generowanych przez pipenv
+# (jeśli korzystasz z pipenv do zarządzania zależnościami)
+Pipfile.lock
+.pipenv/
+
+*.pdf
+Models/data/
+*.h5
