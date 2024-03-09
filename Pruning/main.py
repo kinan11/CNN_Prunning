@@ -8,22 +8,23 @@ from CGA.kernel_density_estimator import gradient, kernel_density_estimator
 
 
 def main():
-    # iris = load_iris()
-    # data = iris.data
-    # data = np.array([[1.1, ], [0.1], [2.1], [1.12], [1.7], [3.0]])
+    iris = load_iris()
+    data = iris.data
+    # data = np.array([[1.1, ], [0.1], [2.1], [1.12], [1.7], [15.0]])
     data = np.array([
     [3, 6],
     [3.3, 7],
-    [5, 4]
+    [5, 4],
+    [31.3, 7],
+    [61.3, 7],
 ])
     scaler = StandardScaler()
     data = scaler.fit_transform(data)
-    # h = calculate_list_of_h(data)
-    # d = kernel_density_estimator(data, h)
-    # print(d)
     x, h = complete_gradient_algorithm(data)
 
-    cluster_algorithm(x, h)
+    x = scaler.fit_transform(x)
+
+    cluster_algorithm(x)
 
 
 if __name__ == "__main__":
