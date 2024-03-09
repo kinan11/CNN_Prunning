@@ -46,7 +46,6 @@ def calculate_h(data):
     c4 = calculate_c4(data, h1)
 
     wu = 1 / (2 * math.sqrt(math.pi))
-    # wu = 0.354
     h = (wu / (c4 * m)) ** (1/5)
     return h
 

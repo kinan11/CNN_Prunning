@@ -15,21 +15,24 @@ def calculate_distances(data):
     return distances
 
 
-def calculate_x_d(data, h):
+def calculate_x_d(data):
     distances = calculate_distances(data)
     max_d = max(distances)
     sigma = statistics.stdev(distances)  # odchylenie standardowe
     d = (math.floor(100 * max_d) - 1)
+    if d <= 0:
+        d = 1
     converted_d = np.array([[x * 0.01 * sigma] for x in range(math.floor(d))])
     h = calculate_list_of_h(converted_d)
     kde_d, s = kernel_density_estimator(converted_d, h)
-    x_d = kde_d[1]
+    x_d = 1
 
     for i in range(1, math.floor(d) - 1):
-        x_d = kde_d[i]
+        x_d = i
         if kde_d[i - 1] > kde_d[i] <= kde_d[i + 1]:
+            print(i)
             break
-    return x_d
+    return converted_d[x_d]
 
 
 def calculate_distance(data):
@@ -39,8 +42,8 @@ def calculate_distance(data):
     return distances
 
 
-def cluster_algorithm(data, h):
-    x_d = calculate_x_d(data, h)
+def cluster_algorithm(data):
+    x_d = calculate_x_d(data)
     clusters = []
     cluster_indices = []  # Lista do przechowywania indeksów klastrów
     original_indices = list(range(data.shape[0]))  # Lista indeksów oryginalnych

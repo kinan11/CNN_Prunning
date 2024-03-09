@@ -20,21 +20,19 @@ def complete_gradient_algorithm(data):
     h = calculate_list_of_h(x)
     b = (np.power(np.mean(h), 2)) / (data.shape[0] + 2)
     d0 = calculate_d(data)
-    alpha = 0.0003
+    alpha = 0.001
 
     for iteration in range(num_iterations):
         dk_prev = calculate_d(x)
         f_value_curr, s = kernel_density_estimator(x, h)
+        grad = gradient(x, h, s)
+        for i in range(data.shape[0]):
+            x[i] += b * (grad[i] / f_value_curr[i])
 
-        if iteration > 0:
-            grad = gradient(x, h, s)
-            for i in range(data.shape[0]):
-                x[i] += b * (grad[i] / f_value_curr[i])
-
-            dk = calculate_d(x)
-            a = abs(dk - dk_prev)
-            if abs(dk - dk_prev) <= alpha * d0:
-                break
+        dk = calculate_d(x)
+        a = abs(dk - dk_prev)
+        if abs(dk - dk_prev) <= alpha * d0:
+            break
 
     print(iteration)
     return x, h
