@@ -13,9 +13,9 @@ def main():
     mean2 = [1, 0]
     mean3 = [0, -1]
 
-    cluster1 = [np.random.normal(mean1) + [-10, -10] for _ in range(1)]
-    cluster2 = [np.random.normal(mean2) + [10, 0] for _ in range(1)]
-    cluster3 = [np.random.normal(mean3) + [0, 100] for _ in range(1)]
+    cluster1 = [np.random.normal(mean1) + [-10, -10] for _ in range(10)]
+    cluster2 = [np.random.normal(mean2) + [10, 0] for _ in range(10)]
+    cluster3 = [np.random.normal(mean3) + [0, 100] for _ in range(10)]
 
     data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
     # data = np.concatenate((cluster1, cluster2), axis=0)
