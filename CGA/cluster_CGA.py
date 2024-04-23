@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import statistics
+import matplotlib.pyplot as plt
 
 from CGA.calaculate_h import calculate_list_of_h
 from CGA.kernel_density_estimator import kernel_density_estimator
@@ -26,12 +27,16 @@ def calculate_x_d(data):
     h = calculate_list_of_h(converted_d)
     kde_d, s = kernel_density_estimator(converted_d, h)
     x_d = 1
+    plt.scatter(range(len(kde_d)), kde_d)
 
     for i in range(1, math.floor(d) - 1):
         x_d = i
         if kde_d[i - 1] > kde_d[i] <= kde_d[i + 1]:
             print(i)
             break
+    z = converted_d[x_d]
+    plt.scatter(x_d, kde_d[x_d], color='red')
+    plt.show()
     return converted_d[x_d]
 
 
