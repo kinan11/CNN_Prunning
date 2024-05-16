@@ -18,6 +18,7 @@ def complete_gradient_algorithm(data):
     num_iterations = 1000
     x = data.copy()
     h = calculate_list_of_h(x)
+    # h = [1, 1]
     b = (np.power(np.mean(h), 2)) / (data.shape[0] + 2)
     d0 = calculate_d(data)
     alpha = 0.001

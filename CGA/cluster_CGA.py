@@ -2,9 +2,11 @@ import math
 import numpy as np
 import statistics
 import matplotlib.pyplot as plt
+from sklearn.neighbors import KernelDensity
 
 from CGA.calaculate_h import calculate_list_of_h
 from CGA.kernel_density_estimator import kernel_density_estimator
+from scipy.stats import norm
 
 
 def calculate_distances(data):
@@ -15,30 +17,43 @@ def calculate_distances(data):
 
     return distances
 
-
 def calculate_x_d(data):
+    # fig2 = plt.figure()
+    # ax2 = fig2.add_subplot(111, projection='3d')
+    # ax2.scatter(data[:, 0], data[:, 1], marker='o')
+    # ax2.scatter(data[:, 0], marker='o')
+    # plt.title('xd')
+    # plt.show()
+
     distances = calculate_distances(data)
     max_d = max(distances)
-    sigma = statistics.stdev(distances)  # odchylenie standardowe
+    # plt.hist(distances, bins=range(0, 9), edgecolor='black', align='left')
+    # plt.show()
+
+    # max_d = 2.6
+    sigma = np.std(distances)
+    print("Max_d: ", max_d)
+    print("Avg distances: ", np.average(distances))
+    print("Sigma: ", sigma)
+
     d = (math.floor(100 * max_d) - 1)
     if d <= 0:
         d = 1
     converted_d = np.array([[x * 0.01 * sigma] for x in range(math.floor(d))])
     h = calculate_list_of_h(converted_d)
     kde_d, s = kernel_density_estimator(converted_d, h)
+
     x_d = 1
     plt.scatter(range(len(kde_d)), kde_d)
 
     for i in range(1, math.floor(d) - 1):
         x_d = i
         if kde_d[i - 1] > kde_d[i] <= kde_d[i + 1]:
-            print(i)
             break
     z = converted_d[x_d]
     plt.scatter(x_d, kde_d[x_d], color='red')
     plt.show()
     return converted_d[x_d]
-
 
 def calculate_distance(data):
     distances = np.zeros(data.shape[0] - 1)

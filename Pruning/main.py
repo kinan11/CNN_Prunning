@@ -9,15 +9,24 @@ from CGA.kernel_density_estimator import gradient, kernel_density_estimator
 
 
 def main():
-    mean1 = [-1, 0]
-    mean2 = [1, 0]
-    mean3 = [0, -1]
+    mean1 = [-1, 0, -1]
+    mean2 = [1, 0, 1]
+    mean3 = [0, -1, 0]
 
-    cluster1 = [np.random.normal(mean1) + [-10, -10] for _ in range(10)]
-    cluster2 = [np.random.normal(mean2) + [10, 0] for _ in range(10)]
-    cluster3 = [np.random.normal(mean3) + [0, 100] for _ in range(10)]
-
+    cluster1 = [np.random.normal(mean1) + [0, 0, 0] for _ in range(5)]
+    cluster2 = [np.random.normal(mean2) + [20, 20, 20] for _ in range(5)]
+    cluster3 = [np.random.normal(mean3) + [40, 40, 40] for _ in range(5)]
     data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
+
+    # mean1 = [-1]
+    # mean2 = [1]
+    # mean3 = [0]
+    #
+    # cluster1 = [np.random.normal(mean1) + [0] for _ in range(500)]
+    # cluster2 = [np.random.normal(mean2) + [20] for _ in range(500)]
+    # cluster3 = [np.random.normal(mean3) + [-40] for _ in range(500)]
+    # data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
+
     # data = np.concatenate((cluster1, cluster2), axis=0)
 
     np.random.shuffle(data)
@@ -33,27 +42,39 @@ def main():
 #     [61.3, 7],
 # ])
     scaler = StandardScaler()
-    data = scaler.fit_transform(data)
-    x, h = complete_gradient_algorithm(data)
-
-    x = scaler.fit_transform(x)
-
-    colors = plt.cm.rainbow(np.linspace(0, 1, len(x)))
 
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111, projection='3d')
-    ax2.scatter(x[:, 0], x[:, 1], marker='o')
+    ax2.scatter(data[:, 0], data[:, 1], data[:, 2], marker='o')
+    plt.title('Oryginał')
     plt.show()
+
+    # fig, ax = plt.subplots()
+    # ax.scatter(data, np.zeros_like(data), marker='o')
+    # plt.title('Oryginał')
+    # plt.show()
+
+    data = scaler.fit_transform(data)
+    x, h = complete_gradient_algorithm(data)
+    print("h: ", h)
+
+    x = scaler.fit_transform(x)
+
+    colors = ['red', 'green', 'blue', 'yellow', 'orange', 'purple']
 
     z = cluster_algorithm(x)
 
+    # fig, ax = plt.subplots()
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
+    i = 0
     for cluster_indices, color in zip(z, colors):
         for index in cluster_indices:
-            ax.scatter(data[index, 0], data[index, 1], c=[color], marker='o')
-
+            # ax.scatter(x[index, 0],0, c=colors[i], marker='o')
+            ax.scatter(x[index, 0], x[index, 1], x[index, 2], c=colors[i], marker='o')
+        i += 1
+    plt.title("Po CGCA")
     plt.show()
 
 
