@@ -42,6 +42,7 @@ def modified_kernel_density_estimator(data, h, s):
 
     return kde_values
 
+
 def gradient_kernel_density_estimator(data, h, s):
     m, d = data.shape
 
@@ -75,5 +76,6 @@ def kernel_density_estimator(data, h):
     s = (kde_values / geometric_means) ** (-c)
 
     modified_kde_values = modified_kernel_density_estimator(data, h, s)
+    # modified_kde_values = kde_values
 
     return modified_kde_values, s

@@ -39,6 +39,9 @@ def calculate_h(data):
 
     wu = 1 / (2 * np.sqrt(np.pi))
     h = (wu / (c4 * m)) ** (1/5)
+
+    if h < 0.2:
+        return 0.2
     return h
 
 
@@ -51,9 +54,17 @@ def calculate_list_of_h(data):
     return h
 
 # def calculate_list_of_h(data):
-#     n = len(data)
 #     m = len(data[0])
 #     h = []
 #     for i in range(m):
-#         h.append(1)
+#         h.append(0.03)
 #     return h
+
+# def calculate_list_of_h(data):
+#     n, d = data.shape
+#     bandwidths = []
+#     for i in range(d):
+#         std_dev = np.std(data[:, i])
+#         bandwidth = 1.06 * std_dev * n ** (-1 / (d + 4))
+#         bandwidths.append(bandwidth)
+#     return np.array(bandwidths)

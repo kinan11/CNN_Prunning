@@ -9,13 +9,13 @@ from CGA.kernel_density_estimator import gradient, kernel_density_estimator
 
 
 def main():
-    mean1 = [-1, 0, -1]
-    mean2 = [1, 0, 1]
-    mean3 = [0, -1, 0]
+    mean1 = [-1, 0]
+    mean2 = [1, 0]
+    mean3 = [0, -1]
 
-    cluster1 = [np.random.normal(mean1) + [0, 0, 0] for _ in range(5)]
-    cluster2 = [np.random.normal(mean2) + [20, 20, 20] for _ in range(5)]
-    cluster3 = [np.random.normal(mean3) + [40, 40, 40] for _ in range(5)]
+    cluster1 = [np.random.normal(mean1) + [0, 0] for _ in range(1000)]
+    cluster2 = [np.random.normal(mean2) + [20, 20] for _ in range(1000)]
+    cluster3 = [np.random.normal(mean3) + [40, 40] for _ in range(1000)]
     data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
 
     # mean1 = [-1]
@@ -45,7 +45,7 @@ def main():
 
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111, projection='3d')
-    ax2.scatter(data[:, 0], data[:, 1], data[:, 2], marker='o')
+    ax2.scatter(data[:, 0], data[:, 1], marker='o')
     plt.title('Oryginał')
     plt.show()
 
@@ -69,10 +69,10 @@ def main():
     ax = fig.add_subplot(111, projection='3d')
 
     i = 0
-    for cluster_indices, color in zip(z, colors):
+    for cluster_indices in z:
         for index in cluster_indices:
             # ax.scatter(x[index, 0],0, c=colors[i], marker='o')
-            ax.scatter(x[index, 0], x[index, 1], x[index, 2], c=colors[i], marker='o')
+            ax.scatter(x[index, 0], x[index, 1],  c=colors[i%6], marker='o')
         i += 1
     plt.title("Po CGCA")
     plt.show()
