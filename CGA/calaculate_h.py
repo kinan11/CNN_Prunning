@@ -40,8 +40,8 @@ def calculate_h(data):
     wu = 1 / (2 * np.sqrt(np.pi))
     h = (wu / (c4 * m)) ** (1/5)
 
-    if h < 0.2:
-        return 0.2
+    # if h < 0.2:
+    #     return 0.2
     return h
 
 

@@ -9,30 +9,32 @@ from CGA.kernel_density_estimator import gradient, kernel_density_estimator
 
 
 def main():
-    mean1 = [-1, 0]
-    mean2 = [1, 0]
-    mean3 = [0, -1]
-
-    cluster1 = [np.random.normal(mean1) + [0, 0] for _ in range(1000)]
-    cluster2 = [np.random.normal(mean2) + [20, 20] for _ in range(1000)]
-    cluster3 = [np.random.normal(mean3) + [40, 40] for _ in range(1000)]
-    data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
-
-    # mean1 = [-1]
-    # mean2 = [1]
-    # mean3 = [0]
+    # mean1 = [-1, 0, -1, -1]
+    # mean2 = [1, 0, 1, 1]
+    # mean3 = [0, -1, 0, 0]
     #
-    # cluster1 = [np.random.normal(mean1) + [0] for _ in range(500)]
-    # cluster2 = [np.random.normal(mean2) + [20] for _ in range(500)]
-    # cluster3 = [np.random.normal(mean3) + [-40] for _ in range(500)]
+    # cluster1 = [np.random.normal(mean1) + [0, 0, 0, 0] for _ in range(200)]
+    # cluster2 = [np.random.normal(mean2) + [20, 20, 20, 20] for _ in range(200)]
+    # cluster3 = [np.random.normal(mean3) + [40, 40, 40, 40] for _ in range(200)]
     # data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
+
+    mean1 = [-1]
+    mean2 = [1]
+    mean3 = [0]
+
+    cluster1 = [np.random.normal(mean1) + [0] for _ in range(100)]
+    cluster2 = [np.random.normal(mean2) + [20] for _ in range(100)]
+    cluster3 = [np.random.normal(mean3) + [-40] for _ in range(100)]
+    data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
 
     # data = np.concatenate((cluster1, cluster2), axis=0)
 
-    np.random.shuffle(data)
+    # np.random.shuffle(data)
 
-#     iris = load_iris()
-#     data = iris.data
+    # data = np.array([[1.], [2.], [3.]])
+
+    # iris = load_iris()
+    # data = iris.data
 #     # data = np.array([[1.1, ], [0.1], [2.1], [1.12], [1.7], [15.0]])
 #     data = np.array([
 #     [3, 6],
@@ -43,18 +45,18 @@ def main():
 # ])
     scaler = StandardScaler()
 
-    fig2 = plt.figure()
-    ax2 = fig2.add_subplot(111, projection='3d')
-    ax2.scatter(data[:, 0], data[:, 1], marker='o')
-    plt.title('Oryginał')
-    plt.show()
-
-    # fig, ax = plt.subplots()
-    # ax.scatter(data, np.zeros_like(data), marker='o')
+    # fig2 = plt.figure()
+    # ax2 = fig2.add_subplot(111, projection='3d')
+    # ax2.scatter(data[:, 0], data[:, 1], data[:, 2], marker='o')
     # plt.title('Oryginał')
     # plt.show()
 
-    data = scaler.fit_transform(data)
+    fig, ax = plt.subplots()
+    ax.scatter(data, np.zeros_like(data), marker='o')
+    plt.title('Oryginał')
+    plt.show()
+
+    # data = scaler.fit_transform(data)
     x, h = complete_gradient_algorithm(data)
     print("h: ", h)
 
@@ -71,8 +73,8 @@ def main():
     i = 0
     for cluster_indices in z:
         for index in cluster_indices:
-            # ax.scatter(x[index, 0],0, c=colors[i], marker='o')
-            ax.scatter(x[index, 0], x[index, 1],  c=colors[i%6], marker='o')
+            ax.scatter(x[index, 0],0, c=colors[i], marker='o')
+            # ax.scatter(x[index, 0], x[index, 1], x[index, 2],  c=colors[i%6], marker='o')
         i += 1
     plt.title("Po CGCA")
     plt.show()
@@ -80,3 +82,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # gradient(np.array([[1, 1], [2, 2], [3, 3]]), [1, 2], [1, 1, 1])

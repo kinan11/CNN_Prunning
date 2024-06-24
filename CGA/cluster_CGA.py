@@ -41,7 +41,7 @@ def calculate_x_d(data):
         d = 1
     converted_d = np.array([[x * 0.01 * sigma] for x in range(math.floor(d))])
     h = calculate_list_of_h(converted_d)
-    h=[0.1]
+    # h=[0.1]
     kde_d, s = kernel_density_estimator(converted_d, h)
 
     x_d = 1
