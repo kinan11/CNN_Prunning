@@ -15,13 +15,15 @@ def calculate_d(x):
 
 
 def complete_gradient_algorithm(data):
-    num_iterations = 1000
+    # num_iterations = 1000
+    num_iterations = 500
     x = data.copy()
     h = calculate_list_of_h(x)
-    # h = [1.2, 1.2]
-    b = (np.power(np.mean(h), 2)) / (data.shape[0] + 2)
+    # h = np.ones(data.shape[1])
+    b = ((np.power(np.mean(h), 2)) / (data.shape[0] + 2))
+    # b = 1
     d0 = calculate_d(data)
-    alpha = 0.001
+    alpha = 0.00001
 
     for iteration in range(num_iterations):
         dk_prev = calculate_d(x)
@@ -32,7 +34,7 @@ def complete_gradient_algorithm(data):
 
         dk = calculate_d(x)
         a = abs(dk - dk_prev)
-        if abs(dk - dk_prev) <= alpha * d0:
+        if abs(dk - dk_prev) <= alpha * d0 and iteration > 20:
             break
 
     print(iteration)

@@ -22,14 +22,14 @@ def main():
     mean2 = [1]
     mean3 = [0]
 
-    cluster1 = [np.random.normal(mean1) + [0] for _ in range(100)]
-    cluster2 = [np.random.normal(mean2) + [20] for _ in range(100)]
-    cluster3 = [np.random.normal(mean3) + [-40] for _ in range(100)]
+    cluster1 = [np.random.normal(mean1) + [0] for _ in range(10)]
+    cluster2 = [np.random.normal(mean2) + [20] for _ in range(10)]
+    cluster3 = [np.random.normal(mean3) + [-40] for _ in range(10)]
     data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
 
     # data = np.concatenate((cluster1, cluster2), axis=0)
 
-    # np.random.shuffle(data)
+    np.random.shuffle(data)
 
     # data = np.array([[1.], [2.], [3.]])
 

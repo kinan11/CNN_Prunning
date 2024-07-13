@@ -38,20 +38,21 @@ def calculate_h(data):
     c4 = calculate_c4(data, h1)
 
     wu = 1 / (2 * np.sqrt(np.pi))
+    # wu = 0.354
     h = (wu / (c4 * m)) ** (1/5)
-
-    # if h < 0.2:
-    #     return 0.2
+    #
+    # if h < 1:
+    #     return 1
     return h
 
 
-def calculate_list_of_h(data):
-    n = len(data)
-    m = len(data[0])
-    h = []
-    for i in range(m):
-        h.append(calculate_h([data[j][i] for j in range(n)]))
-    return h
+# def calculate_list_of_h(data):
+#     n = len(data)
+#     m = len(data[0])
+#     h = []
+#     for i in range(m):
+#         h.append(calculate_h([data[j][i] for j in range(n)]))
+#     return h
 
 # def calculate_list_of_h(data):
 #     m = len(data[0])
@@ -60,11 +61,25 @@ def calculate_list_of_h(data):
 #         h.append(0.03)
 #     return h
 
+def silverman_bandwidth(data):
+    n = len(data)
+    std_dev = np.std(data)
+    iqr = np.subtract(*np.percentile(data, [75, 25]))
+    return 0.9 * min(std_dev, iqr / 1.34) * n**(-1/5)
+
 # def calculate_list_of_h(data):
-#     n, d = data.shape
-#     bandwidths = []
-#     for i in range(d):
-#         std_dev = np.std(data[:, i])
-#         bandwidth = 1.06 * std_dev * n ** (-1 / (d + 4))
-#         bandwidths.append(bandwidth)
-#     return np.array(bandwidths)
+#     n = len(data)
+#     m = len(data[0])
+#     h = []
+#     for i in range(m):
+#         h.append(silverman_bandwidth([data[j][i] for j in range(n)]))
+#     return h
+
+def calculate_list_of_h(data):
+    n, d = data.shape
+    bandwidths = []
+    for i in range(d):
+        std_dev = np.std(data[:, i])
+        bandwidth = 1.06 * std_dev * n ** (-1 / 5)
+        bandwidths.append(bandwidth)
+    return np.array(bandwidths)

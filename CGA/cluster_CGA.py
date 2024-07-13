@@ -27,8 +27,8 @@ def calculate_x_d(data):
 
     distances = calculate_distances(data)
     max_d = max(distances)
-    # plt.hist(distances, bins=range(0, 9), edgecolor='black', align='left')
-    # plt.show()
+    plt.hist(distances, bins=range(0, 9), edgecolor='black', align='left')
+    plt.show()
 
     # max_d = 2.6
     sigma = np.std(distances)
@@ -42,6 +42,8 @@ def calculate_x_d(data):
     converted_d = np.array([[x * 0.01 * sigma] for x in range(math.floor(d))])
     h = calculate_list_of_h(converted_d)
     # h=[0.1]
+    print("h: ", h)
+    print("liczba: ", len(distances))
     kde_d, s = kernel_density_estimator(converted_d, h)
 
     x_d = 1
