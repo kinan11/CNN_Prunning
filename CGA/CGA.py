@@ -1,9 +1,6 @@
-import math
-
 import numpy as np
-
 from CGA.calaculate_h import calculate_list_of_h
-from CGA.kernel_density_estimator import kernel_density_estimator, gradient
+from CGA.kernel_density_estimator import calculate_s, modified_kernel_density_estimator, kernel_density_gradient
 
 
 def calculate_d(x):
@@ -15,27 +12,28 @@ def calculate_d(x):
 
 
 def complete_gradient_algorithm(data):
-    # num_iterations = 1000
     num_iterations = 500
     x = data.copy()
     h = calculate_list_of_h(x)
-    # h = np.ones(data.shape[1])
-    b = ((np.power(np.mean(h), 2)) / (data.shape[0] + 2))
-    # b = 1
+    b = ((np.power(h, 2)) / (data.shape[1] + 2))
+    # b = np.power(h, 2) / 3
     d0 = calculate_d(data)
-    alpha = 0.00001
+
+    s = calculate_s(x, h)
+    alpha = 0.001
 
     for iteration in range(num_iterations):
+
         dk_prev = calculate_d(x)
-        f_value_curr, s = kernel_density_estimator(x, h)
-        grad = gradient(x, h, s)
+        f_value_curr = modified_kernel_density_estimator(x, h, s)
+        grad = kernel_density_gradient(x, h, s)
+
         for i in range(data.shape[0]):
             x[i] += b * (grad[i] / f_value_curr[i])
 
         dk = calculate_d(x)
-        a = abs(dk - dk_prev)
-        if abs(dk - dk_prev) <= alpha * d0 and iteration > 20:
+
+        if abs(dk - dk_prev) <= alpha * d0:
             break
 
-    print(iteration)
     return x, h

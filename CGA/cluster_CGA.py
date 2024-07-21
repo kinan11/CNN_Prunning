@@ -1,12 +1,7 @@
 import math
 import numpy as np
-import statistics
-import matplotlib.pyplot as plt
-from sklearn.neighbors import KernelDensity
-
 from CGA.calaculate_h import calculate_list_of_h
-from CGA.kernel_density_estimator import kernel_density_estimator
-from scipy.stats import norm
+from CGA.kernel_density_estimator import calculate_s, single_modified_kernel_density_estimator
 
 
 def calculate_distances(data):
@@ -17,20 +12,27 @@ def calculate_distances(data):
 
     return distances
 
-def calculate_x_d(data):
-    # fig2 = plt.figure()
-    # ax2 = fig2.add_subplot(111, projection='3d')
-    # ax2.scatter(data[:, 0], data[:, 1], marker='o')
-    # ax2.scatter(data[:, 0], marker='o')
-    # plt.title('xd')
-    # plt.show()
 
+def reduce_sample(odl):
+    np.random.seed(3)
+    bootstrap = 1000
+    points = bootstrap
+    new_odl = []
+
+    for i in range(points):
+        numer = np.random.randint(0, points)
+        new_odl.append(odl[numer])
+        odl = np.delete(odl, numer)
+        points -= 1
+
+    odl = np.array(new_odl)
+    return odl
+
+
+def calculate_x_d(data):
     distances = calculate_distances(data)
     max_d = max(distances)
-    plt.hist(distances, bins=range(0, 9), edgecolor='black', align='left')
-    plt.show()
 
-    # max_d = 2.6
     sigma = np.std(distances)
     print("Max_d: ", max_d)
     print("Avg distances: ", np.average(distances))
@@ -40,24 +42,29 @@ def calculate_x_d(data):
     if d <= 0:
         d = 1
     converted_d = np.array([[x * 0.01 * sigma] for x in range(math.floor(d))])
-    h = calculate_list_of_h(converted_d)
-    # h=[0.1]
-    print("h: ", h)
-    print("liczba: ", len(distances))
-    kde_d, s = kernel_density_estimator(converted_d, h)
 
-    x_d = 1
-    plt.scatter(range(len(kde_d)), kde_d)
+    if len(distances) > 1000:
+        dst = (np.array([[x] for x in reduce_sample(distances)]))
+    else:
+        dst = (np.array([[x] for x in distances]))
+
+    h = calculate_list_of_h(np.array(dst))
+    s = calculate_s(dst, h)
+
+    kern_cur = 0
+    diff_cur = 0
+    min_odl = 0
 
     for i in range(1, math.floor(d) - 1):
-        x_d = i
-        if kde_d[i - 1] > kde_d[i] <= kde_d[i + 1]:
+        diff_prev = diff_cur
+        kern_prev = kern_cur
+        kern_cur = single_modified_kernel_density_estimator(converted_d[i], dst, h, s)
+        diff_cur = kern_cur - kern_prev
+        if (diff_prev < 0) and (diff_cur > 0):
+            min_odl = converted_d[i]
             break
-    z = converted_d[x_d]
-    plt.scatter(x_d, kde_d[x_d], color='red')
-    plt.show()
-    return converted_d[x_d]
 
+    return min_odl
 def calculate_distance(data):
     distances = np.zeros(data.shape[0] - 1)
     for i in range(1, data.shape[0]):
@@ -68,12 +75,12 @@ def calculate_distance(data):
 def cluster_algorithm(data):
     x_d = calculate_x_d(data)
     clusters = []
-    cluster_indices = []  # Lista do przechowywania indeksów klastrów
-    original_indices = list(range(data.shape[0]))  # Lista indeksów oryginalnych
+    cluster_indices = []
+    original_indices = list(range(data.shape[0]))
 
     while data.shape[0] > 0:
         distances = calculate_distance(data)
-        indexes = [0]  # Indeksy elementów do klastra
+        indexes = [0]
         for index, element in enumerate(distances):
             if element < x_d:
                 indexes.append(index + 1)
@@ -81,12 +88,12 @@ def cluster_algorithm(data):
         if indexes:
             cluster = [data[i] for i in reversed(indexes)]
             clusters.append(cluster)
-            cluster_index = [original_indices[i] for i in reversed(indexes)]  # Odpowiednie indeksy oryginalne
-            cluster_indices.append(cluster_index)  # Dodajemy indeksy do listy klastrów
+            cluster_index = [original_indices[i] for i in reversed(indexes)]
+            cluster_indices.append(cluster_index)
 
             data = np.delete(data, indexes, axis=0)
             original_indices = [i for j, i in enumerate(original_indices) if
-                                j not in indexes]  # Aktualizacja oryginalnych indeksów
+                                j not in indexes]
 
     print(x_d, len(clusters))
     for i, cluster in enumerate(clusters):

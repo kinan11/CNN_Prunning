@@ -1,11 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.datasets import load_iris
 from sklearn.preprocessing import StandardScaler
 from CGA.CGA import complete_gradient_algorithm
-from CGA.calaculate_h import calculate_list_of_h
 from CGA.cluster_CGA import cluster_algorithm
-from CGA.kernel_density_estimator import gradient, kernel_density_estimator
 
 
 def main():

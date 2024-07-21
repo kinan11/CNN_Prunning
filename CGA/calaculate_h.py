@@ -8,15 +8,34 @@ def calculate_k6(x):
 def calculate_k4(x):
     return 1 / np.sqrt(2 * np.pi) * (x**4 - 6 * x**2 + 3) * np.exp(-0.5 * x**2)
 
+def C(X, ksi, h):
+    m = len(X)
+    total_sum = 0
+    for i in range(m):
+        for j in range(m):
+            if ksi == 6:
+                total_sum += calculate_k6((X[j] - X[i]) / h)
+            elif ksi == 4:
+                total_sum += calculate_k4((X[j] - X[i]) / h)
+    c = 1 / (m**2 * h**(ksi + 1)) * total_sum
+    return c
+
 def calculate_c6(data, h):
-    data = np.array(data)
-    diff = (data[:, None] - data[None, :]) / h  # Oblicz macierz różnic
-    return np.mean(calculate_k6(diff)) / (h**7)
+    m = len(data)
+    total_sum = 0
+    for i in range(m):
+        for j in range(m):
+            total_sum += calculate_k6((data[j] - data[i]) / h)
+    return 1 / (m ** 2 * h ** 7) * total_sum
+
 
 def calculate_c4(data, h):
-    data = np.array(data)
-    diff = (data[:, None] - data[None, :]) / h  # Oblicz macierz różnic
-    return np.mean(calculate_k4(diff)) / (h**7)
+    m = len(data)
+    total_sum = 0
+    for i in range(m):
+        for j in range(m):
+            total_sum += calculate_k4((data[j] - data[i]) / h)
+    return 1 / (m ** 2 * h ** 5) * total_sum
 
 
 def calculate_h(data):
@@ -38,48 +57,13 @@ def calculate_h(data):
     c4 = calculate_c4(data, h1)
 
     wu = 1 / (2 * np.sqrt(np.pi))
-    # wu = 0.354
     h = (wu / (c4 * m)) ** (1/5)
-    #
-    # if h < 1:
-    #     return 1
+
     return h
 
 
-# def calculate_list_of_h(data):
-#     n = len(data)
-#     m = len(data[0])
-#     h = []
-#     for i in range(m):
-#         h.append(calculate_h([data[j][i] for j in range(n)]))
-#     return h
-
-# def calculate_list_of_h(data):
-#     m = len(data[0])
-#     h = []
-#     for i in range(m):
-#         h.append(0.03)
-#     return h
-
-def silverman_bandwidth(data):
-    n = len(data)
-    std_dev = np.std(data)
-    iqr = np.subtract(*np.percentile(data, [75, 25]))
-    return 0.9 * min(std_dev, iqr / 1.34) * n**(-1/5)
-
-# def calculate_list_of_h(data):
-#     n = len(data)
-#     m = len(data[0])
-#     h = []
-#     for i in range(m):
-#         h.append(silverman_bandwidth([data[j][i] for j in range(n)]))
-#     return h
-
 def calculate_list_of_h(data):
-    n, d = data.shape
-    bandwidths = []
-    for i in range(d):
-        std_dev = np.std(data[:, i])
-        bandwidth = 1.06 * std_dev * n ** (-1 / 5)
-        bandwidths.append(bandwidth)
-    return np.array(bandwidths)
+    data = np.array(data)
+    transposed_data = data.T
+    h = [calculate_h(column) for column in transposed_data]
+    return h
