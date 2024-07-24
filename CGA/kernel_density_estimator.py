@@ -25,7 +25,7 @@ def standard_kernel_density_estimator(data, h):
     return kde_values
 
 
-def modified_kernel_density_estimator(data, h, s):
+def modified_kernel_density_estimator(x, data, h, s):
     m, d = data.shape
 
     kde_values = np.zeros(m)
@@ -34,7 +34,7 @@ def modified_kernel_density_estimator(data, h, s):
         for j in range(m):
             kernel_vals = 1
             for k in range(d):
-                diff = data[i, k] - data[j, k]
+                diff = x[i, k] - data[j, k]
                 scaled_diff = diff / (h[k] * s[j])
                 kernel_vals *= gaussian_kernel(scaled_diff)
             kde_values[i] += kernel_vals / (s[j] ** d)
@@ -42,14 +42,14 @@ def modified_kernel_density_estimator(data, h, s):
 
     return kde_values
 
-def kernel_density_gradient(data, h, s):
+def kernel_density_gradient(x_new, data, h, s):
     gradient = []
     X = data.T
     n, m = X.shape
     norm_const = (2 * np.pi) ** (-n / 2) / np.prod(h)
 
     for g in range(m):
-        x = data[g]
+        x = x_new[g]
         grad = np.ones(n)
 
         for dim in range(n):
@@ -87,3 +87,28 @@ def single_modified_kernel_density_estimator(x, data, h, s):
             kernel_vals *= gaussian_kernel(scaled_diff)
         kde_values += kernel_vals / (s[j] ** d)
     return kde_values/ (m * np.prod(h))
+
+def x_d_estimator(x, X, h, s):
+    m = X.shape[0]
+    estym = 0
+
+    for i in range(m):
+        x1 = (x[0]- X[i][0]) / (h[0] * s[i])
+        x2 = (x[0] + X[i][0]) / (h[0] * s[i])
+        tmp = (np.exp(-0.5 * x1**2) + np.exp(-0.5 * x2**2))
+        estym += tmp / (s[i])
+
+    f = estym / h / m * (2 * np.pi)**(-1 / 2)
+    return f
+
+def calculate_s_x_d(x, h):
+    m = x.shape[0]
+    c = 0.5
+    s = np.ones(m)
+    est = np.array([x_d_estimator(x[i], x, h, s) for i in range(m)])
+
+    geo_mean = np.exp(np.mean(np.log(est)))
+
+    s = (est ** -c) / (geo_mean ** -c)
+
+    return s

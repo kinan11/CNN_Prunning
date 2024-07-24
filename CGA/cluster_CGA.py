@@ -1,7 +1,8 @@
 import math
 import numpy as np
 from CGA.calaculate_h import calculate_list_of_h
-from CGA.kernel_density_estimator import calculate_s, single_modified_kernel_density_estimator
+from CGA.kernel_density_estimator import calculate_s, single_modified_kernel_density_estimator, \
+    x_d_estimator, calculate_s_x_d
 
 
 def calculate_distances(data):
@@ -15,8 +16,7 @@ def calculate_distances(data):
 
 def reduce_sample(odl):
     np.random.seed(3)
-    bootstrap = 1000
-    points = bootstrap
+    points = 2000
     new_odl = []
 
     for i in range(points):
@@ -33,7 +33,12 @@ def calculate_x_d(data):
     distances = calculate_distances(data)
     max_d = max(distances)
 
-    sigma = np.std(distances)
+    if len(distances) > 2000:
+        dst = (np.array([[x] for x in reduce_sample(distances)]))
+    else:
+        dst = (np.array([[x] for x in distances]))
+
+    sigma = np.std(dst)
     print("Max_d: ", max_d)
     print("Avg distances: ", np.average(distances))
     print("Sigma: ", sigma)
@@ -43,59 +48,71 @@ def calculate_x_d(data):
         d = 1
     converted_d = np.array([[x * 0.01 * sigma] for x in range(math.floor(d))])
 
-    if len(distances) > 1000:
-        dst = (np.array([[x] for x in reduce_sample(distances)]))
-    else:
-        dst = (np.array([[x] for x in distances]))
-
     h = calculate_list_of_h(np.array(dst))
-    s = calculate_s(dst, h)
+    s = calculate_s_x_d(dst, h)
 
-    kern_cur = 0
-    diff_cur = 0
-    min_odl = 0
+    f_prev = x_d_estimator(converted_d[0], dst, h, s)
+    x_d = 0
 
-    for i in range(1, math.floor(d) - 1):
-        diff_prev = diff_cur
-        kern_prev = kern_cur
-        kern_cur = single_modified_kernel_density_estimator(converted_d[i], dst, h, s)
-        diff_cur = kern_cur - kern_prev
-        if (diff_prev < 0) and (diff_cur > 0):
-            min_odl = converted_d[i]
+    for i in range(1, len(converted_d) - 1):
+        f_next = x_d_estimator(converted_d[i + 1], dst, h, s)
+        f_curr = x_d_estimator(converted_d[i], dst, h, s)
+        if f_prev > f_curr and f_curr <= f_next:
+            x_d = converted_d[i]
             break
+        f_prev = f_curr
 
-    return min_odl
+    print("x_d: ", x_d)
+    return x_d
+
 def calculate_distance(data):
     distances = np.zeros(data.shape[0] - 1)
     for i in range(1, data.shape[0]):
         distances[i - 1] = np.linalg.norm(data[0] - data[i])
     return distances
 
-
-def cluster_algorithm(data):
+def cluster_algorithm(data, h, s, data_old):
     x_d = calculate_x_d(data)
+    return find_clusters(data, h, s, data_old, x_d)
+
+def calculate_max_i(data, h, s, assigned_points):
+    f_max = 0
+    max_i = -1
+
+    for i in range(data.shape[0]):
+        if i in assigned_points:
+            continue
+        tmp = single_modified_kernel_density_estimator(data[i], data, h, s)
+        if f_max < tmp:
+            max_i = i
+            f_max = tmp
+    return max_i
+
+
+def find_clusters(data, h, s, data_old, x_d):
+    m = data_old.shape[0]
     clusters = []
-    cluster_indices = []
-    original_indices = list(range(data.shape[0]))
+    assigned_points = set()
 
-    while data.shape[0] > 0:
-        distances = calculate_distance(data)
-        indexes = [0]
-        for index, element in enumerate(distances):
-            if element < x_d:
-                indexes.append(index + 1)
+    while len(assigned_points) < m:
+        max_i = calculate_max_i(data_old, h, s, assigned_points)
+        if max_i == -1:
+            break
 
-        if indexes:
-            cluster = [data[i] for i in reversed(indexes)]
-            clusters.append(cluster)
-            cluster_index = [original_indices[i] for i in reversed(indexes)]
-            cluster_indices.append(cluster_index)
+        current_cluster = [max_i]
+        tmp = [max_i]
+        assigned_points.add(max_i)
 
-            data = np.delete(data, indexes, axis=0)
-            original_indices = [i for j, i in enumerate(original_indices) if
-                                j not in indexes]
+        for index in tmp:
+            neighbors = np.where(np.linalg.norm(data - data[index], axis=1) < x_d)[0]
+            for neighbor in neighbors:
+                if neighbor not in assigned_points:
+                    assigned_points.add(neighbor)
+                    current_cluster.append(neighbor)
+                    tmp.append(neighbor)
 
-    print(x_d, len(clusters))
+        clusters.append(current_cluster)
+
     for i, cluster in enumerate(clusters):
-        print(f"Cluster {i + 1}: {cluster_indices[i]}")
-    return cluster_indices
+        print(f"Cluster {i + 1}: {clusters[i]}")
+    return clusters

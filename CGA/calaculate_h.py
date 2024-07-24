@@ -8,18 +8,6 @@ def calculate_k6(x):
 def calculate_k4(x):
     return 1 / np.sqrt(2 * np.pi) * (x**4 - 6 * x**2 + 3) * np.exp(-0.5 * x**2)
 
-def C(X, ksi, h):
-    m = len(X)
-    total_sum = 0
-    for i in range(m):
-        for j in range(m):
-            if ksi == 6:
-                total_sum += calculate_k6((X[j] - X[i]) / h)
-            elif ksi == 4:
-                total_sum += calculate_k4((X[j] - X[i]) / h)
-    c = 1 / (m**2 * h**(ksi + 1)) * total_sum
-    return c
-
 def calculate_c6(data, h):
     m = len(data)
     total_sum = 0

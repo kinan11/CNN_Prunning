@@ -26,7 +26,7 @@ def main():
 
     # data = np.concatenate((cluster1, cluster2), axis=0)
 
-    np.random.shuffle(data)
+    # np.random.shuffle(data)
 
     # data = np.array([[1.], [2.], [3.]])
 

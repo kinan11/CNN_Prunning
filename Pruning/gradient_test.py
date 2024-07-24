@@ -9,25 +9,26 @@ from sklearn import datasets
 
 
 def main():
-    # params = {
-    #     'cluster_1': {'mean': [-15, -15, -15], 'cov': [[2, 0, 0], [0, 2, 0], [0, 0, 2]], 'size': 500},
-    #     'cluster_2': {'mean': [0, 0, 0], 'cov': [[2, 0, 0], [0, 2, 0], [0, 0, 2]], 'size': 500},
-    #     'cluster_3': {'mean': [15, 15, 15], 'cov': [[2, 0, 0], [0, 2, 0], [0, 0, 2]], 'size': 500},
-    # }
-    #
-    # np.random.seed(0)
-    # cluster1 = np.random.multivariate_normal(params['cluster_1']['mean'], params['cluster_1']['cov'],
-    #                                          params['cluster_1']['size'])
-    # cluster2 = np.random.multivariate_normal(params['cluster_2']['mean'], params['cluster_2']['cov'],
-    #                                          params['cluster_2']['size'])
-    # cluster3 = np.random.multivariate_normal(params['cluster_3']['mean'], params['cluster_3']['cov'],
-    #                                          params['cluster_3']['size'])
-    #
-    # data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
-    # np.random.shuffle(data)
-    data = datasets.load_iris().data
+    params = {
+        'cluster_1': {'mean': [-15, -15, -15], 'cov': [[15, 0, 0], [0, 15, 0], [0, 0, 15]], 'size': 100},
+        'cluster_2': {'mean': [0, 0, 0], 'cov': [[15, 0, 0], [0, 15, 0], [0, 0, 15]], 'size': 100},
+        'cluster_3': {'mean': [15, 15, 15], 'cov': [[15, 0, 0], [0, 15, 0], [0, 0, 15]], 'size': 100},
+    }
+
+    np.random.seed(0)
+    cluster1 = np.random.multivariate_normal(params['cluster_1']['mean'], params['cluster_1']['cov'],
+                                             params['cluster_1']['size'])
+    cluster2 = np.random.multivariate_normal(params['cluster_2']['mean'], params['cluster_2']['cov'],
+                                             params['cluster_2']['size'])
+    cluster3 = np.random.multivariate_normal(params['cluster_3']['mean'], params['cluster_3']['cov'],
+                                             params['cluster_3']['size'])
+
+    data = np.concatenate((cluster1, cluster2, cluster3), axis=0)
+    np.random.shuffle(data)
 
     # data = np.loadtxt('X.txt')
+
+    # data = datasets.load_iris().data
 
     scaler = StandardScaler()
     data = scaler.fit_transform(data)
@@ -50,14 +51,14 @@ def main():
     # plt.suptitle("Oryginał - wymiary")
     # plt.show()
 
-    x, h = complete_gradient_algorithm(data)
+    x, h, s = complete_gradient_algorithm(data)
     print("h: ", h)
 
     x = scaler.fit_transform(x)
 
     colors = ['red', 'green', 'blue', 'yellow', 'orange', 'purple']
 
-    z = cluster_algorithm(x)
+    z = cluster_algorithm(x, h, s, data)
 
     fig = plt.figure()
     ax = fig.add_subplot(111)

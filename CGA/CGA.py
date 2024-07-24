@@ -25,8 +25,8 @@ def complete_gradient_algorithm(data):
     for iteration in range(num_iterations):
 
         dk_prev = calculate_d(x)
-        f_value_curr = modified_kernel_density_estimator(x, h, s)
-        grad = kernel_density_gradient(x, h, s)
+        f_value_curr = modified_kernel_density_estimator(x, data, h, s)
+        grad = kernel_density_gradient(x, data, h, s)
 
         for i in range(data.shape[0]):
             x[i] += b * (grad[i] / f_value_curr[i])
@@ -35,5 +35,5 @@ def complete_gradient_algorithm(data):
 
         if abs(dk - dk_prev) <= alpha * d0:
             break
-
-    return x, h
+    print(iteration)
+    return x, h, s
