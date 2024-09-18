@@ -1,0 +1,8 @@
+keras==3.5.0
+keras_nightly==2.5.0.dev2021032900
+Keras_Preprocessing==1.1.2
+matplotlib==3.7.1
+numpy==1.19.5
+opencv_python==4.8.0.74
+scikit_learn==1.5.1
+tensorflow==2.6.0

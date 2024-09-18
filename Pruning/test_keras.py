@@ -1,18 +1,20 @@
+import os
 import random
 
 import numpy as np
 from keras import Model, Sequential, Input
-from keras.datasets import mnist
-from keras.layers import BatchNormalization, Activation, Conv2D, Dense
+from keras.callbacks import EarlyStopping
+from keras.datasets import mnist, fashion_mnist, cifar10
+from keras.layers import BatchNormalization, Activation, Conv2D, Dense, Add, UpSampling2D
 from keras.saving.save import load_model
 from keras.utils import to_categorical
+from keras_preprocessing.image import ImageDataGenerator
+from sklearn.cluster import MeanShift, DBSCAN, KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sympy import Add
 
 from CGA.CGA import complete_gradient_algorithm
 from CGA.cluster_CGA import cluster_algorithm
-
 
 def prune_filter(original_model, cut_off_layer_name, indexes):
     layer_to_prune = original_model.get_layer(cut_off_layer_name)
@@ -31,18 +33,9 @@ def prune_filter(original_model, cut_off_layer_name, indexes):
     model_next = Model(inputs=original_model.layers[all_layers.index(next_layer) + 1].input,
                        outputs=original_model.output)
 
-    # for layer in model_prev.layers:
-    #     layer.trainable = False
-    #
-    # for layer in model_next.layers:
-    #     layer.trainable = False
-
-    combined_input = Input(shape=(32, 32, 3))
-
-    output_prev = model_prev(combined_input)
-
     config = layer_to_prune.get_config()
     config['filters'] = len(indexes)
+
 
     new_layer = Conv2D(**config)
     input_shape = layer_to_prune.input_shape
@@ -57,49 +50,74 @@ def prune_filter(original_model, cut_off_layer_name, indexes):
         new_weights = [weights]
     new_layer.set_weights(new_weights)
 
-    # input_tensor = Input(shape=model_prev.output_shape)
-    # output_prev = model_prev(input_tensor)
-
     x = model_prev.output
+    shortcut = x
 
     for layer in model_to_prune.layers:
         if layer.name == cut_off_layer_name:
             x = new_layer(x)
-            # x = Conv2D(filters=256, kernel_size=(1, 1), name='adaptation_conv')(x)
         elif isinstance(layer, Conv2D):
-            new_layer_conv = Conv2D(
-                filters=layer.filters,
-                kernel_size=layer.kernel_size,
-                strides=layer.strides,
-                padding=layer.padding,
-                activation=None,
-                use_bias=layer.use_bias,
-                kernel_initializer=layer.kernel_initializer,
-                bias_initializer=layer.bias_initializer
-            )
-            # new_layer.trainable = False
-            x = new_layer_conv(x)
+            config = layer.get_config()
+            new_layer_conv = Conv2D(**config)
+            input_shape = layer.input_shape
+            new_layer_conv.build(input_shape)
+            if '_3_' in layer.name:
+                new_layer_conv = Conv2D(
+                    filters=len(indexes),
+                    kernel_size=layer.kernel_size,
+                    strides=(4,4),
+                    padding=layer.padding,
+                    activation=None,
+                    use_bias=layer.use_bias,
+                    kernel_initializer=layer.kernel_initializer,
+                    bias_initializer=layer.bias_initializer,
+                    name=layer.name
+                )
+                shortcut = new_layer_conv(shortcut)
+            else:
+                x = new_layer_conv(x)
         elif isinstance(layer, BatchNormalization):
-            new_layer_batch = BatchNormalization()
-            # new_layer.trainable = False
-            x = new_layer_batch(x)
+            new_layer_batch = BatchNormalization(name=layer.name)
+            if '_3_' in layer.name:
+                if '_3_' in layer.name:
+                    if not 'block1' in layer.name:
+                        x = new_layer_batch(x)
+                    else:
+                        shortcut = new_layer_batch(shortcut)
+                    x = Add(name=layer.name.replace("_3_bn", "_add"))([x, shortcut])
+                else:
+                    x = new_layer_batch(x)
+            else:
+                x = new_layer_batch(x)
         elif isinstance(layer, Activation):
-            new_layer_activation = Activation(layer.activation)
-            # new_layer.trainable = False
+            new_layer_activation = Activation(layer.activation.__name__, name=layer.name)
             x = new_layer_activation(x)
-        elif isinstance(layer, Add):
-            index_conv4_block1_add = model_to_prune.layers.index(layer)
-            index_conv4_block1_0_bn = index_conv4_block1_add - 2
-            index_conv4_block1_3_bn = index_conv4_block1_add - 1
-            output_conv4_block1_0_bn = model_to_prune.layers[index_conv4_block1_0_bn].output
-            output_conv4_block1_3_bn = model_to_prune.layers[index_conv4_block1_3_bn].output
-            x = Add()([output_conv4_block1_0_bn, output_conv4_block1_3_bn])
+            if 'out' in layer.name:
+                shortcut = x
 
     pruned_model = Model(inputs=model_prev.output, outputs=x)
+    for i in range(len(pruned_model.weights)):
+        pruned_model.weights[i]._handle_name = pruned_model.weights[i].name + "_" + str(i)
 
     new_model = Sequential()
     new_model.add(model_prev)
     new_model.add(pruned_model)
+
+    pruned_output_shape = pruned_model.output_shape[1:]
+    model_next_input_shape = model_next.input_shape[1:]
+
+    if pruned_output_shape != model_next_input_shape:
+        if pruned_output_shape[-1] != model_next_input_shape[-1]:
+            new_model.add(Conv2D(model_next_input_shape[-1], (1, 1), padding='same'))
+
+        if pruned_output_shape[0] != model_next_input_shape[0] or pruned_output_shape[1] != model_next_input_shape[1]:
+            new_model.add(UpSampling2D(size=(
+                model_next_input_shape[0] // pruned_output_shape[0],
+                model_next_input_shape[1] // pruned_output_shape[1]
+            )))
+
+            new_model.add(Conv2D(model_next_input_shape[-1], (3, 3), padding='same'))
+
     new_model.add(model_next)
     return new_model
 
@@ -119,58 +137,140 @@ def print_all_layers(model):
     for layer in model.layers:
         print_layer(layer)
 
-def main():
-    output_layer = 'conv4_block1_2_conv'
-    model = load_model('../Models/NN/model_mnist_renet50_4_categories.h5')
-    print_all_layers(model)
-    resnet_model = model.get_layer('resnet50')
+training_data_gen = ImageDataGenerator(
+    rescale=1. / 255,
+    zoom_range = 0.12,
+    height_shift_range = 0.12,
+    width_shift_range = 0.12,
+    horizontal_flip = True
+)
+test_data_gen = ImageDataGenerator(rescale=1./255)
 
-    feature_maps = extract_feature_maps(resnet_model, output_layer, np.random.rand(1, 224, 224, 3))
+def main():
+    output_layer = 'conv4_block2_2_conv'
+    # model = load_model('../Models/Final_NN/model_stanford_dog_renet50.h5')
+    model = load_model('../Models/Final_NN/model_cifar10_renet50.h5')
+    # model = load_model('../Models/NN/model_fashion_mnist_renet50_4_categories.h5')
+
+    resnet_model = model.get_layer('resnet50')
+    # resnet_model = model
+    resnet_model.summary()
+
+    feature_maps = extract_feature_maps(resnet_model, output_layer, np.random.rand(1, 300, 300, 3))
 
     num_samples, height, width, num_filters = feature_maps.shape
     feature_maps_flattened = feature_maps.reshape((num_samples, height * width, num_filters))
 
-    # Reshape to (num_samples * height * width, num_filters) for clustering
     weights_list = feature_maps_flattened.reshape((num_filters, -1))
 
-    pca = PCA(n_components=3)
-    data = pca.fit_transform(weights_list)
+    # pca = PCA(n_components=3)
+    # data = pca.fit_transform(weights_list)
+    #
+    # scaler = StandardScaler()
+    # data = scaler.fit_transform(data)
+    # x, h, s = complete_gradient_algorithm(data)
+    #
+    # x = scaler.fit_transform(x)
+    # z = cluster_algorithm(x, h, s, data)
+    #
+    # indexes = [random.choice(l) for l in z]
 
-    scaler = StandardScaler()
-    data = scaler.fit_transform(data)
-    x, h, s = complete_gradient_algorithm(data)
+    # mean_shift = KMeans(34)
+    # mean_shift.fit(data)
+    # labels = mean_shift.labels_
+    #
+    # unique_labels = np.unique(labels)
 
-    x = scaler.fit_transform(x)
-    z = cluster_algorithm(x, h, s, data)
+    # indexes = []
+    # for label in unique_labels:
+    #     indices_in_cluster = np.where(labels == label)[0]
+    #     random_index = random.choice(indices_in_cluster)
+    #     indexes.append(random_index)
+    # indexes = [1,5,8,3]
+    # train_generator = training_data_gen.flow_from_directory('../Models/data/images/Images',
+    #                                                         target_size=(300, 300),
+    #                                                         batch_size=32,
+    #                                                         class_mode='categorical')
+    # test_generator = test_data_gen.flow_from_directory('../Models/data/test',
+    #                                                    target_size=(300, 300),
+    #                                                    batch_size=32,
+    #                                                    class_mode='categorical')
+    (X_train, y_train), (X_test, y_test) = cifar10.load_data()
 
-    indexes = [random.choice(l) for l in z]
+    train_y = to_categorical(y_train, 10)
+    test_y = to_categorical(y_test, 10)
+    indexes = [37, 220, 157, 185, 168, 48, 2, 18, 204, 53, 137, 188, 54, 12, 33, 216, 127, 84, 71, 221, 128, 200, 217, 236, 107, 180, 73, 35, 136, 8, 126]
+    print(indexes)
 
     prune_input = Input(shape=(32, 32, 3))
 
     pruned_model = prune_filter(resnet_model, output_layer, indexes)
 
+    print_all_layers(pruned_model)
+
+
     new_model = Sequential()
-    new_model.add(prune_input)
+    # new_model.add(prune_input)
     new_model.add(pruned_model)
-    new_model.add(Dense(10, activation='softmax'))
+    # new_model.add(model.get_layer('dense'))
+    new_model.add(Dense(10, activation='softmax', name='dense_out'))
 
     print_all_layers(new_model)
 
-    (train_X, train_y), (test_X, test_y) = mnist.load_data()
-    train_X = np.expand_dims(train_X, axis=-1)
-    train_X = np.repeat(train_X, 3, axis=-1)
-    train_X = np.pad(train_X, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='constant')
-    train_y = to_categorical(train_y, 10)
+    # (train_X, train_y), (test_X, test_y) = mnist.load_data()
+    # train_X = np.expand_dims(train_X, axis=-1)
+    # train_X = np.repeat(train_X, 3, axis=-1)
+    # train_X = np.pad(train_X, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='constant')
+    # train_y = to_categorical(train_y, 10)
+
+    # (train_X, train_y), (test_X, test_y) = fashion_mnist.load_data()
+    #
+    # train_X = train_X.reshape((train_X.shape[0], 28, 28))
+    # X_test = test_X.reshape((test_X.shape[0], 28, 28))
+    # # change the type to float
+    # train_X = train_X.astype('float32')
+    # X_test = X_test.astype('float32')
+    #
+    # # convert data to 3 channels
+    # train_X = np.stack((train_X,) * 3, axis=-1)
+    # test_X = np.stack((X_test,) * 3, axis=-1)
+    #
+    # train_y = to_categorical(train_y)
+    # test_y = to_categorical(test_y)
 
     new_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    new_model.fit(x=train_X, y=train_y, epochs=1)
-
-    test_X = np.expand_dims(test_X, axis=-1)
-    test_X = np.repeat(test_X, 3, axis=-1)
-    test_X = np.pad(test_X, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='constant')
-    result = new_model.evaluate(test_X, to_categorical(test_y, 10))
+    history = new_model.fit(x=X_train, y=train_y, epochs=1)
+    #
+    #
+    # test_X = np.expand_dims(test_X, axis=-1)
+    # test_X = np.repeat(test_X, 3, axis=-1)
+    # test_X = np.pad(test_X, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='constant')
+    # result = new_model.evaluate(test_X, to_categorical(test_y, 10))
+    result = new_model.evaluate(X_test, test_y)
+    # history = new_model.fit(train_generator,
+    #                     epochs=1,
+    #                     validation_data=test_generator)
+    #
+    # result = new_model.evaluate(test_generator, verbose=2)
     print(result)
-    new_model.save('../NN/pruned_model_mnist_renet50_4_categories_1_layer.h5')
+
+    train_loss = history.history['loss'][-1]
+    train_acc = history.history['accuracy'][-1]
+    test_loss, test_acc = result[0], result[1]
+    with open("training_results_cifat10_resnet.txt", "a") as file:
+        file.write(f"Model: {'../Models/Final_NN/model_cifar_renet50.h5'}\n")
+        file.write(f"Indexes: {indexes}\n")
+        file.write(f"Rozmiar z: {len(indexes)}\n")
+        file.write(f"Training accuracy: {train_acc}, Training loss: {train_loss}\n")
+        file.write(f"Test accuracy: {test_acc}, Test loss: {test_loss}\n")
+        file.write("=" * 50 + "\n")
+
+    save_path = '../NN/pruned_model_mnist_renet50_4_categories_kmeans.h5'
+    # save_path = '../NN/pruned_model_fashion_mnist_renet50_4_categories_1_layer.h5'
+    if os.path.exists(save_path):
+        os.remove(save_path)
+
+    new_model.save(save_path, overwrite=True)
 
 if __name__ == "__main__":
     main()
